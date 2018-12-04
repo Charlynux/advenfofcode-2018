@@ -56,10 +56,15 @@
    (fn [gm] (reduce + (map count (val gm))))
    guards-moves))
 
+(defn max-asleep [guard-moves]
+  (->> guard-moves
+       (map frequencies)
+       (apply merge-with +)
+       (sort-by val)
+       last))
 
-
-(->> (val max-guard)
-     (map frequencies)
-     (apply merge-with +)
-     (sort-by val)
+;; Part 2
+(->> guards-moves
+     (map (fn [[id moves]] [id (max-asleep moves)]))
+     (sort-by (comp val second))
      last)
