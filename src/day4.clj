@@ -15,7 +15,7 @@
 
 
 #_(def input (slurp "src/day4-sample.input"))
-(def input (slurp "src/day4-sample-random.input"))
+(def input (slurp "src/day4.input"))
 
 (defn group-by-guard [acc record]
   (if (= (:type record) "shift")
@@ -25,6 +25,7 @@
 (->>
  input
  (clojure.string/split-lines)
+ (sort)
  (map line->record)
  (reduce
   group-by-guard
@@ -37,7 +38,6 @@
 (defn calculate-range [day]
   (->>
    (conj day { :minutes 60 :type "wake"})
-   (sort-by :minutes)
    (map :minutes)
    (partition 2)
    (mapcat #(apply range %))))
@@ -63,6 +63,3 @@
      (apply merge-with +)
      (sort-by val)
      last)
-
-(* 58 3229)
-(key max-guard)
