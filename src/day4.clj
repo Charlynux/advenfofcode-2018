@@ -17,44 +17,38 @@
 #_(def input (slurp "src/day4-sample.input"))
 (def input (slurp "src/day4.input"))
 
-(defn group-by-guard [acc record]
-  (if (= (:type record) "shift")
-    (assoc acc :current (:id record))
-    (update-in acc [:moves (:current acc)] (fnil #(conj % record) []))))
-
-(->>
- input
- (clojure.string/split-lines)
- (sort)
- (map line->record)
- (reduce
-  group-by-guard
-  {:moves {} :current nil})
- :moves)
-
-(def data *1)
+(defn group-by-guard [records]
+  (:records
+   (reduce
+    (fn [acc record]
+      (if (= (:type record) "shift")
+        (assoc acc :current (:id record))
+        (update-in acc [:moves (:current acc)] (fnil #(conj % record) []))))
+    {:moves {} :current nil}
+    records)))
 
 
-(defn calculate-range [day]
+(defn day-moves->ranges [day-moves]
   (->>
-   (conj day { :minutes 60 :type "wake"})
-   (map :minutes)
-   (partition 2)
-   (mapcat #(apply range %))))
+   (partition 2 day-moves)
+   (mapcat (fn [[sleep wake]]
+             (let [start (:minutes sleep)
+                   end (:minutes wake)]
+               (range start end))))))
 
 (defn moves->ranges [moves]
   (->> moves
        (group-by :day)
        vals
-       (map calculate-range)))
+       (map day-move->ranges)))
 
-(def guards-moves (into {} (map (fn [[k moves]] [k (moves->ranges moves)])) data))
-
-(def max-guard
-  (apply
-   max-key
-   (fn [gm] (reduce + (map count (val gm))))
-   guards-moves))
+(def guards-moves (->>
+                   input
+                   (clojure.string/split-lines)
+                   (sort)
+                   (map line->record)
+                   group-by-guard
+                   (into {} (map (fn [[k moves]] [k (moves->ranges moves)])))))
 
 (defn max-asleep [guard-moves]
   (->> guard-moves
@@ -63,8 +57,16 @@
        (sort-by val)
        last))
 
+;; Part 1
+(let [max-guard (apply max-key (fn [gm] (reduce + (map count (val gm)))) guards-moves)
+      asleep-minute (max-asleep (val max-guard))]
+  (* (key max-guard) (first asleep-minute)))
+
+
 ;; Part 2
 (->> guards-moves
      (map (fn [[id moves]] [id (max-asleep moves)]))
      (sort-by (comp val second))
-     last)
+     last
+     ((juxt first (comp first second)))
+     (apply *))
