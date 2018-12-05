@@ -12,14 +12,29 @@
 
 (def data (remove #{"\n"} (clojure.string/split (slurp "src/day5.input") #"")))
 
-(def result (reduce
-             (fn [acc value]
-               (let [prev (last acc)]
-                 (if (and (not (nil? prev)) (remove? prev value))
-                   (vec (butlast acc))
-                   (conj acc value)
-                   )))
-             []
-             data))
+(defn reduced-polymer-count [polymer]
+  (count (reduce
+          (fn [acc value]
+            (let [prev (first acc)]
+              (if (and (not (nil? prev)) (remove? prev value))
+                (rest acc)
+                (cons value acc)
+                )))
+          []
+          polymer)))
+;;Part 1
+(time (reduced-polymer-count data))
 
-(count result)
+
+;; Part 2
+(defn remove-type [type array]
+  (let [types #{type (clojure.string/upper-case type)}]
+    (remove types array)))
+
+(def all-types (map (comp str char) (range 97 123)))
+
+(first
+ (sort-by second
+          (map
+           (fn [type] [type (reduced-polymer-count (remove-type type data))])
+           all-types)))
