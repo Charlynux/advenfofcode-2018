@@ -41,3 +41,5 @@
             [(apply max xs) (apply max ys)]]
       grid-points (generate-grid grid)]
   (count grid-points))
+
+(map (fn [node] (map (partial manhattan-distance node) data)) data)
