@@ -46,3 +46,18 @@
      (drop-while (fn [deps] (> (count (keys deps)) 1)))
      first
      :result)
+
+
+;; Part 2
+
+;;; Data Structure
+;;; { :result "" :deps {} :workers {}}
+
+;; find-next-dependencies
+;; (take nb-workers)
+;; append-to-workers
+;; workers-work
+;; find-work-done (sort by alpha)
+;; remove-workers + apply-dependency + append to result
+
+;; iterate -> take-while (not-empty? deps workers)
