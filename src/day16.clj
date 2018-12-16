@@ -99,25 +99,23 @@
 
 (defn valid-ops [before instruction after]
   (into #{}
-        (map str (filter #(= after (% instruction before)) opcodes))))
+        (filter #(= after (% instruction before)) opcodes)))
 
 (defn group->ops [[before instruction after]]
-  (valid-ops before instruction after))
+  { (first instruction) (valid-ops before instruction after)})
 
 
 #_(group->ops '[[3, 2, 1, 1] (9 2 1 2) [3, 2, 2, 1]])
 
-(def xform-solve1 (comp (take-while (not-find-separators))
-                        (remove clojure.string/blank?)
-                        (partition-all 3)
-                        (map parse-group)
-                        (map group->ops)
-                        (filter #(>= (count %) 3))))
+(def xform
+  (comp (take-while (not-find-separators))
+        (remove clojure.string/blank?)
+        (partition-all 3)
+        (map parse-group)
+        (map group->ops)
+        ))
 
-#_(defn merge-ops
-    ([value] value)
-    ([acc value]
-     (merge-with clojure.set/intersection acc value)))
+(def xform-solve1 (comp xform (filter #(>= (count (first (vals %))) 3))))
 
 ;; Part 1
 (transduce
@@ -125,3 +123,57 @@
  (fn ([val] val) ([acc _] (inc acc)))
  0
  data)
+
+
+;; Part 2
+
+(defn remove-op [state op]
+  (into {} (map
+            (fn [[key ops]]
+              (if (= 1 (count ops))
+                [key ops]
+                [key (disj ops op)])) state)))
+
+(defn remove-known-ops [state]
+  (reduce
+   remove-op
+   state
+   (map first
+        (filter #(= (count %) 1)
+                (map second state)))))
+
+(defn merge-ops
+  ([value] value)
+  ([acc value]
+   (merge-with clojure.set/intersection acc value)))
+
+;; read first section to create a map number -> op
+(defn data->ops [data]
+  (->> (transduce
+        xform
+        merge-ops
+        {}
+        data)
+       (iterate remove-known-ops)
+       (drop-while (fn [state] (some #(> (count (second %)) 1) state)))
+       first
+       (map (fn [[k v]] [k (first v)]))
+       (into {})))
+
+(defn data->instructions [data]
+  (->> data
+       (drop-while (not-find-separators))
+       (remove clojure.string/blank?)
+       (map parse-instruction)))
+
+(defn solve-2 [data]
+  (let [ops (data->ops data)
+        instructions (data->instructions data)]
+    (reduce
+     (fn [registers instruction]
+       (let [op (get ops (first instruction))]
+         (op instruction registers)))
+     [0 0 0 0]
+     instructions)))
+
+(solve-2 data)
